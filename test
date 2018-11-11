@@ -1,0 +1,280 @@
+<%@ page language="java" import="java.util.*" pageEncoding="utf-8"%>
+<!doctype html>
+<html lang="en">
+<style type="text/css">
+</style>
+<head>
+	<meta charset="utf-8">
+	<link rel="stylesheet" type="text/css" href="jqeasyui/themes/default/easyui.me.css">
+	<link rel="stylesheet" type="text/css" href="jqeasyui/themes/icon.css">
+    <link rel="stylesheet" type="text/css" href="system/css/icon.css">
+    <script type="text/javascript" src="jqeasyui/jquery.min.js"></script>
+    <script type="text/javascript" src="jqeasyui/jquery.easyui.min.js"></script>
+    <script type="text/javascript" src="jqeasyui/easyui-lang-zh_CN.js"></script>	
+	<script type="text/javascript" src="system/easyui_functions.js"></script>
+</head>
+<body style="margin: 2px 2px 2px 2px;">
+<div id='main' class="easyui-layout" fit="true" style="margin:0px 0px 0px 0px;">
+ 	<div id="toolbar" class="easyui-panel" data-options="region:'north'" style="height:30px;padding:1px 1px 1px 10px">
+ 		<a href="#" class=btn-separator></a>
+ 		<a href="#" class=easyui-linkbutton id="search" data-options="plain:true,onClick:fn_search">查找</a>
+ 	</div>
+ 	<div id="bottom" class="easyui-panel" data-options="region:'south',split:true" style="height:300px"></div>
+ 	<div id="center" class="easyui-panel" data-options="region:'center'"></div>
+</div>    
+<script>
+$(function() {
+	myTextField('oid','center','订单编码：',75,35*0+20,10,0,180);
+	myDateField('odate','center','订单日期：',75,35*0+20,300,0,200);
+	myTextField('cname','center','客户名称：',75,35*1+20,300,0,250);
+		
+	myTextField('employeeid','center','业务员：',75,375,10,0,160);
+	myTextField('contactid','center','制表员：',75,375,290,0,160);
+	myTextField('amount','center','总金额：',75,375,570,0,160);
+		
+	myForm('myForm2','bottom','商品信息',0,0,270,600,'');
+	myTextField('pid','myForm2','商品编码：',75,33*0+15,10,0,200);
+	myTextField('pname','myForm2','商品名称：',75,33*1+15,10,0,260);
+	myTextField('guige','myForm2','规格型号：',75,33*2+15,10,0,200);
+	myTextField('jiliang','myForm2','计量单位：',75,33*3+15,10,0,200);
+	myTextField('count','myForm2','数量：',75,33*4+15,10,0,200);
+	myTextField('price','myForm2','单价：',75,33*5+15,10,0,200);
+	myTextField('money','myForm2','金额：',75,33*6+15,10,0,200);
+	$("#count").textbox('textbox').css('text-align','right');
+	$("#price").textbox('textbox').css('text-align','right');
+	$("#money").textbox('textbox').css('text-align','right');
+	
+	var str='<label id="c_label">客户编码：</label><div id="c_div"><input id="cid" class="easyui-combogrid" style="width:200px"/></div>';
+	$("#center").append($(str));
+	$("#c_label").css({position:"absolute",top:"57px", width:"75px", "text-align":"right", "z-index":2});
+	$("#c_div").css({position: "absolute",top:"55px", left:"89px","z-index":2});
+	
+	//隐藏控件
+	str='<input type="hidden" id="addoredit" />';
+	$("#main").append($(str));
+	$("#addoredit").val('add');
+	$("#addoredit").val('edit');
+	
+	$("#cid").combogrid({
+		width:180, 
+		height:24,
+		panelWidth:750, 
+		panelHeight:400,
+	    idField:'customerid',
+		textField:'customerid',
+	    columns:[[
+			{field:'customerid', title:'客户编码', width:75, halign:'center'},
+			{field:'customername', title:'客户名称', width:250, halign:'center'},
+			{field:'address', title:'客户地址', width:280, halign:'center'},
+			{field:'city', title:'所在城市',width:90, halign:'center'}
+	    ]],
+	    onSelect:function(v,r){
+			$("#cname").textbox('setValue',r.customername);
+		},
+		onChange:function(v){
+			fnloadcustomerdata(v);
+		}
+	});
+	
+	var str='<div id="g_div" style="position:absolute;top:100px;height:200px"><input id="myGrid1" class="easyui-datagrid"/></div>';
+	$("#center").append($(str));			
+	var xcolumns=[[		
+		{ title: '商品名称', field:'productname', width: 220, halign:'center', align: 'left' },
+		{ title: '规格型号', field: 'quantityperunit', width: 95, halign:'center', align: 'center'},
+		{ title: '计量单位', field: 'unit', width: 95, halign:'center', align: 'center' },
+		{ title: '数量', field: 'quantity', width: 95, halign:'center', align: 'right' },
+		{ title: '单价', field: 'unitprice', width: 95, halign:'center', align: 'right' },
+		{ title: '金额', field: 'amount', width: 130, halign:'center', align: 'right' }
+	]];
+	var xfixedcolumns=[[
+		{ title: 'id', field: 'id', width: 20, checkbox: true, sortable: true, align: 'center'},
+		{ title: '商品编码', field:'productid', width: 110, halign:'center', align: 'left' },
+	]];
+	$("#myGrid1").datagrid({
+		title: '&nbsp;商品列表',
+		iconCls: "panelIcon",
+		width:900,
+		//height:355,
+		//data:source,
+		nowrap: true,
+		pagePosition: 'bottom',  //top,both
+		autoRowHeight: false,
+		rownumbers: true,
+		striped: true,
+		collapsible: true,
+		singleSelect: true, //false,
+		columns:xcolumns,
+		frozenColumns: xfixedcolumns
+	});	
+		
+	$("#oid").textbox({
+		buttonIcon:'locateIcon',
+        onClickButton:function(r){
+			s1=$("#oid").textbox('getValue');
+			source=myRunProcedure('jqdemos','c32_oid',s1);
+			$("#odate").datebox('setValue',source[0].orderdate);
+			$("#cid").textbox('setValue',source[0].customerid);
+		}
+	});
+	$("#cid").textbox({
+		onChange:function(r){
+			s2=$("#cid").textbox('getValue');
+			source=myRunProcedure('jqdemos','cname',s2);
+			$("#cname").textbox('setValue',source[0].customername);
+			fnloadcustomerdata();
+		}
+	});
+	$("#myGrid1").datagrid({
+		onSelect:function(index,r){
+			rr=$("#myGrid1").datagrid('getRows'); 
+			if(rr.length>0){
+				//var s3=r.productid;
+				//source=myRunProcedure('jqdemos','c32_products',s3);
+				$("#pid").textbox('setValue',r.productid);
+				$("#pname").textbox('setValue',r.productname);
+				$("#guige").textbox('setValue',r.quantityperunit);
+				$("#jiliang").textbox('setValue',r.unit);
+				$("#count").textbox('setValue',r.quantity);
+				$("#price").textbox('setValue',r.unitprice);
+				$("#money").textbox('setValue',r.amount);	
+			}
+		}
+	});
+	$("#myForm2").panel({
+		tools:[{
+			iconCls:'addIcon',
+			handler:function(){
+				fn_add();
+			}
+		},'-',{
+			iconCls:'editIcon',
+			handler:function(){
+				fn_edit();
+			}
+		},'-',{
+			iconCls:'deleteIcon',
+			handler:function(){
+				fn_delete();
+			}
+		},'-',{
+			iconCls:'saveIcon',
+			handler:function(){
+				fn_save();
+			}
+		},'-',{
+			iconCls:'refreshIcon',
+			handler:function(){
+				fn_refresh();
+			}
+		}]
+	});	
+//---------------------
+});
+function fn_search(){
+	source0=myRunProcedure('jqdemos','c32',s1);
+	$("#myGrid1").datagrid({
+		data:source0
+	});
+	$("#employeeid").textbox('setValue',source0[0].employeeid);
+	$("#contactid").textbox('setValue',source0[0].contactid);
+	$("#amount").textbox('setValue',source0[0].amt);
+}
+function fnloadcustomerdata(v){
+	s2=$("#cid").textbox('getValue');
+	var source=myRunProcedure('jqdemos','c32_customer',s2);
+	$("#cid").combogrid('grid').datagrid('loadData', source);
+}
+function fn_add(){
+	$("#myForm2").form("clear");
+	$("#pid").textbox({readonly:false});
+	$("#pname").textbox('readonly',false);
+	/*$("#pid").textbox('setValue','');
+	$("#pname").textbox('setValue','');
+	$("#pid").textbox('setValue','');
+	$("#pname").textbox('setValue','');
+	$("#guige").textbox('setValue','');
+	$("#jiliang").textbox('setValue','');
+	$("#count").textbox('setValue','');
+	$("#price").textbox('setValue','');
+	$("#money").textbox('setValue','');*/
+	$("#addoredit").val('add');
+}
+function fn_edit(){
+	$("#pid").textbox({readonly:true});
+	$("#pname").textbox('readonly',true);
+	$("#addoredit").val('edit');
+}
+function fn_delete(){	       
+	if(rr.length>0){
+		var r1=$("#myGrid1").datagrid('getSelected');
+		var r2=$("#myGrid1").datagrid('getRowIndex',r1);
+		$("#myGrid1").datagrid('deleteRow',r2);
+		if(r2>rr.length-1 && rr.length>0){
+			r2--;
+		}
+		$("#myGrid1").datagrid('selectRow',r2);
+		//console.log(r2);
+	}
+}
+function fn_save(){
+	ss1=$("#pid").textbox('getValue');
+	ss2=$("#pname").textbox('getValue');
+	ss3=$("#guige").textbox('getValue');
+	ss4=$("#jiliang").textbox('getValue');
+	ss5=$("#count").textbox('getValue');
+	ss6=$("#price").textbox('getValue');
+	ss7=$("#money").textbox('getValue');
+	var addoredit=$("#addoredit").val();
+	if (addoredit=='add'){
+		fnValidation();		
+	}else if(addoredit=='edit'){
+		var r1=$("#myGrid1").datagrid('getSelected');
+		r2=$("#myGrid1").datagrid('getRowIndex',r1);
+		console.log(r2);
+		$("#myGrid1").datagrid('updateRow',{
+			index:r2, 	
+			row: {
+				quantityperunit:ss3,
+				unit:ss4,
+				quantity:ss5,
+				unitprice:ss6,
+				amount:ss7
+			}
+		});
+	}
+	
+}
+function fn_refresh(){
+	
+}
+function fnValidation(){
+	var err='';
+	var a=ss1+'	'+ss2;
+	if (ss1.length==0) err+='商品编码不能为空！</br>';
+	if (ss2.length==0) err+='商品名称不能为空！</br>';
+	for(var i=0; i<source0.length; i++){
+		if (ss1==source0[i].productid){
+			err+='商品已存在！</br>';
+		}
+		break;
+	}
+	source1=myRunProcedure('jqdemos','c32_pp',a);
+	if (source1[0].n==0) err+='商品编码与商品名称不匹配！</br>';
+	if (err.length>0){
+		$.messager.alert('系统提示',err,'error');
+	}else{
+		$("#myGrid1").datagrid('appendRow',{
+			productid:ss1,
+			productname:ss2,
+			quantityperunit:ss3,
+			unit:ss4,
+			quantity:ss5,
+			unitprice:ss6,
+			amount:ss7
+		});
+		alert('添加成功！');
+	}
+}
+</script>
+</body>
+</html>
